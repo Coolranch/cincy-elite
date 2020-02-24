@@ -1,25 +1,53 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import { Column, Logo, Row } from './App.styles';
+import { firestore } from './firebase/firebase.utils';
+import { List } from 'semantic-ui-react';
+import logo from './assets/cincy-elite.png';
+import Player from './components/Player/Player';
 
 function App() {
+  const [roster, setRoster] = useState([]);
+
+  function fetchData() {
+    firestore.collection('roster').get()
+      .then(snapshot => {
+        let players = [];
+
+        snapshot.forEach(doc => {
+          players.push(doc.data());
+        });
+
+        setRoster(players.sort((a, b) => {
+          return a.lastname.localeCompare(b.lastname);
+        }));
+      })
+      .catch(err => {
+        console.log('roster error:  ', err);
+      });
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Row>
+      <Column style={{ width: '15%', height: '384px' }}>
+        <Logo src={logo} />
+      </Column>
+      <Column style={{ width: '85%' }}>
+        <Player player={{ firstname: 'Rundle', lastname: 'Brockman' }} />
+        <List horizontal>
+          {
+            roster && roster.map(player =>
+              <List.Item key={player.jersey}>
+                <Player player={player} />
+              </List.Item>
+            )
+          }
+        </List>
+      </Column>
+    </Row>
   );
 }
 
